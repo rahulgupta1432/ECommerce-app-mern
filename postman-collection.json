@@ -1,0 +1,40 @@
+{
+    "info": {
+      "_postman_id": "c8f8c8d0-2f9e-4e8a-b90a-c4b6b7a6e4f4",
+      "name": "User Registration",
+      "description": "Collection for user registration endpoint",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "1.Register User",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\",\n    \"phone\": \"1234567890\",\n    \"address\": \"123 Elm Street\"\n}"
+          },
+          "url": {
+            "raw": "http://localhost:5000/api/register",
+            "protocol": "http",
+            "host": [
+              "localhost"
+            ],
+            "port": "8080",
+            "path": [
+              "api",
+              "register"
+            ]
+          }
+        },
+        "response": []
+      }
+    ]
+  }
+  

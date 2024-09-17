@@ -16,7 +16,6 @@ const generateToken = async (userId, isAdmin, role,tokenVersion) => {
             role,
             tokenVersion: tokenVersion
         };
-    
         const secret = process.env.JWT_SECRET;
         const options = { expiresIn: '1d' };
     
@@ -28,4 +27,4 @@ const generateToken = async (userId, isAdmin, role,tokenVersion) => {
 };
 
 
-module.exports = generateToken ;
+export default generateToken;

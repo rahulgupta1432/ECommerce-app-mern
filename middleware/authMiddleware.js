@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 
 
-exports.Auth = async (req, res, next) => {
+const Auth = async (req, res, next) => {
     const token = req.headers['x-authorization'];
 
     if (token) {
@@ -31,7 +31,7 @@ exports.Auth = async (req, res, next) => {
             let user = '';
 
             // Find the user based on the decoded userId
-            user = await User.findOne({ where: { id: userId ,role:role,isAdmin:isAdmin} });
+            user = await User.findOne({_id:userId,role:role,isAdmin:isAdmin});
             // console.log("user",userId,role)
             if (!user) {
                 return res.status(401).json({
@@ -70,7 +70,7 @@ exports.Auth = async (req, res, next) => {
     }
 };
 
-exports.admin = (req, res, next) => {
+const admin = (req, res, next) => {
   if (req.user &&req.user.isAdmin) {
     next();
   } else {
@@ -83,3 +83,5 @@ exports.admin = (req, res, next) => {
     })
   }
 };
+
+export default Auth;

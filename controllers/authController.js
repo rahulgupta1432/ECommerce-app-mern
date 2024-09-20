@@ -7,7 +7,7 @@ import sendResponse from "../utils/sendResponse.js";
 
 export const registerUser=async(req,res,next)=>{
     try {
-        const { name,email,password,phone,address } = req.body;
+        const { username,email,password,phone,address } = req.body;
         const valid=await registerUserValidation(req.body);
         if(!valid||(valid&&valid.error)){
             console.log("valid",valid.error)
@@ -18,10 +18,10 @@ export const registerUser=async(req,res,next)=>{
             return next(new ErrorHandler("User Already Existed",404));
         }
         let user;
-        user= await User.create({ name, email, password,phone,address });
+        user= await User.create({ username, email, password,phone,address });
         const token=await generateToken(user.id,user.isAdmin,role,user.tokenVersion);
         user.password=undefined;
-        const data={...user.dataValues,token}
+        const data={...user.toObject(),token}
         sendResponse({
             res,
             message: "User Register Successfully",

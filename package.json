@@ -7,12 +7,13 @@
   "scripts": {
     "dev": "nodemon index.js",
     "client": "npm start --prefix \"C:\\Users\\Rahul Gupta\\Documents\\Personal-Projects\\ECommerce-reactjs-ui\\ecom-reactjs-ui\"",
-    "devv":"concurrently \"npm run dev\" \"npm run client\""
+    "devv": "concurrently \"npm run dev\" \"npm run client\""
   },
   "keywords": [],
   "author": "Rahul Gupta",
   "license": "MIT",
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "colors": "^1.4.0",

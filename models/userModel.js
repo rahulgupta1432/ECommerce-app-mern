@@ -7,13 +7,13 @@ const userSchema=new mongoose.Schema({
     },
     email:{
         type:String,
-        required:true
+        required:false
     },
     password:{
         type:String,
         required:true
     },
-    phone:{
+    mobile:{
         type:Number,
         required:true
     },
@@ -37,10 +37,14 @@ const userSchema=new mongoose.Schema({
         type:Boolean,
         default:false
     },
-    // isDeleted:{
-    //     type:Boolean,
-    //     default:false
-    // }
+    isVerified:{
+        type:Boolean,
+        default:false
+    },
+    isDeleted:{
+        type:Boolean,
+        default:false
+    }
 },{
     timestamps:true
 });

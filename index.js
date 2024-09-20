@@ -10,7 +10,15 @@ const app = express();
 import colors from "colors";
 import authRouter from './routes/authRoute.js';
 // import './utils/postmanUpdationALgo.js';
+import { seedOtpData } from './config/seeder.js';
+const utcDate = new Date(Date.now()).toISOString();
+// console.log(utcDate);
 
+seedOtpData()
+// console.log("Public Key:", process.env.PUBLIC_KEY);
+// console.log("Service ID:", process.env.SERVICE_ID);
+// console.log("Template ID:", process.env.TEMPLATE_ID);
+// console.log("PRIVATE_KEY",process.env.PRIVATE_KEY)
 
 
 

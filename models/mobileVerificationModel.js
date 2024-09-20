@@ -19,10 +19,7 @@ const mobileVerificationSchema=new mongoose.Schema({
 
 mobileVerificationSchema.index({expiresAt:5},{expireAfterSeconds:0})
 
-const MobileVerification=mongoose.model(
-    "MobileVerification",
-    mobileVerificationSchema
-);
+const MobileVerification=mongoose.model("MobileVerification",mobileVerificationSchema);
 
 export default MobileVerification;
 

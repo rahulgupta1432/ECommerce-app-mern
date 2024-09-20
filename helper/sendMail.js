@@ -14,14 +14,14 @@ export const sendEmail = async (otp, ip, date) => {
             publicKey: process.env.PUBLIC_KEY,
             template_params: templateData,
         });
-        
+
 
         const response = await emailjs.send('https://api.emailjs.com/api/v1.0/email/send', {
             service_id: process.env.SERVICE_ID,
             template_id: process.env.TEMPLATE_ID,
             user_id: process.env.PUBLIC_KEY,  // Use your public key here
             template_params: templateData,
-            private_key:process.env.PRIVATE_KEY
+            private_key: process.env.PRIVATE_KEY
         });
 
 

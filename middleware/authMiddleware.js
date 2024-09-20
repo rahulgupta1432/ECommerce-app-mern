@@ -6,7 +6,6 @@ import ErrorHandler from "../utils/ErrorHandler.js";
 
 const Auth = async (req, res, next) => {
     const token = req.headers['x-authorization'];
-
     if (token) {
         try {
             // Decrypt the token

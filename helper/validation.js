@@ -5,7 +5,6 @@ const registerUserValidation=async(user)=>{
         email:joi.string().email(),
         password:joi.string().min(8).required(),
         mobile:joi.string().min(10).max(10).required()
-        // answer:joi.string().required()
     });
     let valid = await schema
     .validateAsync(user, { abortEarly: false })

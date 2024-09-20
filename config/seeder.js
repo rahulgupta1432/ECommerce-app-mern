@@ -17,6 +17,7 @@ export const seedOtpData = async () => {
         // Insert new data
         // const otpEntry = new Otp(otpData);
         // await otpEntry.save();
+        
         await MobileVerification.deleteMany();
         await User.deleteMany();
 

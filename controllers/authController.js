@@ -55,7 +55,7 @@ export const registerUser=async(req,res,next)=>{
             const date = Date.now().toString();
             
             // Pass each parameter directly instead of bundling them
-            // message = await sendEmail(otp, ip, date, userEmail);
+            message = await sendEmail(otp, ip, date, userEmail);
         }
         
         // } else if (email) {

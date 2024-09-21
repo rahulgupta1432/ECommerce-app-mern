@@ -14,7 +14,7 @@ import { seedOtpData } from './config/seeder.js';
 const utcDate = new Date(Date.now()).toISOString();
 // console.log(utcDate);
 
-seedOtpData()
+// seedOtpData()
 
 
 

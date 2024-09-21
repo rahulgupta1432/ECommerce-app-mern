@@ -1,11 +1,20 @@
 // ./db/database.js
 import mongoose from 'mongoose';
 
-const MONGO_URI = process.env.MONGO_URI
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.log('MONGO_URI is not defined. Please set it in your environment variables.');
+  process.exit(1);
+}
+
 
 export const connectDB = async () => {
   try {
     await mongoose.connect(MONGO_URI, {
+      useNewUrlParser: true, // Use the new URL parser
+      useUnifiedTopology: true, // Use the new topology engine
+
     });
 
     console.log(`MongoDB connected to server ${mongoose.connection.host}`);

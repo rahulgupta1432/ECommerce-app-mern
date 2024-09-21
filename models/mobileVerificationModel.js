@@ -13,6 +13,9 @@ const mobileVerificationSchema=new mongoose.Schema({
         type:Number,
         required:true
     },
+    type:{
+        type:String,
+    },
     expiresAt:{
         type:Date,
         default:()=>new Date(Date.now()+60*5000)

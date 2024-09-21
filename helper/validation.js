@@ -48,7 +48,8 @@ return { data: valid };
 
 const loginValidation=async(user)=>{
     const schema=joi.object({
-        email:joi.string().email().required(),
+        email:joi.string().email(),
+        mobile:joi.string().min(10).max(10),
         password:joi.string().required()
     })
     let valid = await schema
@@ -67,4 +68,25 @@ const loginValidation=async(user)=>{
 }
 
 
-export {registerUserValidation,loginValidation,verifyOtpValidation}
+
+const resetPasswordValidation=async(user)=>{
+    const schema=joi.object({
+        otp:joi.string().min(4).max(4).required(),
+        password:joi.string().min(8).required()
+    })
+    let valid = await schema
+    .validateAsync(user, { abortEarly: false })
+    .catch((error) => {
+      return { error };
+    });
+  if (!valid || (valid && valid.error)) {
+    let msg = [];
+    for (let i of valid.error.details) {
+      msg.push(i.message);
+    }
+    return { error: msg };
+  }
+  return { data: valid };
+}
+
+export {registerUserValidation,loginValidation,verifyOtpValidation,resetPasswordValidation}

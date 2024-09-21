@@ -1,12 +1,13 @@
-import { loginValidation, registerUserValidation, verifyOtpValidation } from "../helper/validation.js";
+import { loginValidation, registerUserValidation, resetPasswordValidation, verifyOtpValidation } from "../helper/validation.js";
 import User from "../models/userModel.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import generateToken from "../utils/generateToken.js";
 import sendResponse from "../utils/sendResponse.js";
 import MobileVerification from "../models/mobileVerificationModel.js"
 import { sendMessageFast2Sms } from "../helper/sendMessage.js";
-import { sendEmail } from "../helper/sendMail.js";
-
+import { sendEmail, sendResetLink } from "../helper/sendMail.js";
+import crypto from "crypto";
+import bcrypt from "bcrypt";
 export const registerUser=async(req,res,next)=>{
     try {
         const { username,email,password,mobile,role } = req.body;
@@ -31,7 +32,7 @@ export const registerUser=async(req,res,next)=>{
         user.password=undefined;
         const data={...user.toObject()}
         const otp=Math.floor(1000+Math.random()*9000);
-        const verificationData = mobile ? { mobile, otp } : { email: userEmail, otp };
+        const verificationData = mobile ? { mobile, otp ,type:"register"} : { email: userEmail, otp ,type:"register"};
         const checkOtp = await MobileVerification.findOne({
             $or: [
                 { mobile: verificationData.mobile },
@@ -115,8 +116,9 @@ export const verifyOtp=async(req,res,next)=>{
         if(!checkUser){
             return next(new ErrorHandler("User not found",404));
         }
-        checkUserOtp.isVerified=true;
-        checkUserOtp.save();
+        await User.findByIdAndUpdate(checkUser._id,{
+            isVerified:true
+        })
         const token=await generateToken(checkUser.id,checkUser.isAdmin,checkUser.role,checkUser.tokenVersion);
         checkUser.password=undefined;
         const data={token,role:checkUser.role,username:checkUser.username}
@@ -157,7 +159,7 @@ export const resendOtp=async(req,res,next)=>{
             checkExistOtp.otp=otp;
          await checkExistOtp.save();
         }else{
-            const verificationData = mobile ? { mobile, otp } : { email, otp };
+            const verificationData = mobile ? { mobile, otp,type:"resend" } : { email, otp,type:"resend" };
             await MobileVerification.create(verificationData);
         }
             
@@ -179,9 +181,6 @@ export const resendOtp=async(req,res,next)=>{
                 return next(new ErrorHandler("Error Sending in Message",500));
             }
         }
-
-        
-
         sendResponse({
             res,
             message: "OTP Resend Successfully",
@@ -196,18 +195,21 @@ export const resendOtp=async(req,res,next)=>{
 
 export const loginUser=async(req,res,next)=>{
     try {
-        const { email,password } = req.body;
+        const { email,mobile,password } = req.body;
         const valid=await loginValidation(req.body);
         if(!valid||(valid&&valid.error)){
             return next(new ErrorHandler(valid.error,400));
         }
-        const user=await User.findOne({email});
+        const user=await User.findOne({$or:[
+            {email},
+            {mobile}
+        ]});
         if(!user){
-            return next(new ErrorHandler("Invalid Email or Password",404));
+            return next(new ErrorHandler("User not found",400));
         }
         const checkPassword=await user.comparePassword(password);
         if(!checkPassword){
-            return next(new ErrorHandler("Invalid Password",404));
+            return next(new ErrorHandler("Password Is Incorrect",400));
         }
         const token=await generateToken(user.id,user.isAdmin,user.role,user.tokenVersion);
         user.password=undefined;
@@ -221,3 +223,94 @@ export const loginUser=async(req,res,next)=>{
         return next(new ErrorHandler(error.message,500));
     }
 }
+
+
+// const res=await axios.post(`${API_URL}/api/v1/auth/forget-password`,{
+//     [isEmail?'email':'mobile']:email
+//   })
+export const forgetPassword=async(req,res,next)=>{
+    try {
+        const {email,mobile}=req.body;
+        const checkUser = await User.findOne({
+            $or: [
+                { email:email },
+                { mobile:mobile }
+            ]
+        });
+        if(!checkUser){
+            console.log('User not found:', { email, mobile });
+            return next(new ErrorHandler("User not found",404));
+        }
+        const otp=Math.floor(1000+Math.random()*9000);
+        const token=crypto.randomBytes(32).toString('hex');
+        const expiryTime=Date.now()+3600000;
+        const verificationData = mobile ? { mobile, otp,type:"reset",expiryTime } : { email, otp,type:"reset",expiryTime };
+        await MobileVerification.create(verificationData);
+
+        if(mobile){
+            const payloadSms = {
+                mobile: mobile.toString(),
+                otp
+            };
+            const message = await sendMessageFast2Sms(payloadSms);
+            if(!message){
+                return next(new ErrorHandler("Error Sending in Message",500));
+            }
+        }
+        const resentLink=`${process.env.RESET_LINK}/reset-password?token=${token}&otp=${otp}`;
+        if(email){
+            // const sendMessage=await sendResetLink(resentLink,checkUser.email);
+            // if(!sendMessage){
+            //     return next(new ErrorHandler("Error Sending in Message",500));
+            // }
+        }
+        sendResponse({
+            res,
+            message: "Password Reset Link Sent Successfully",
+            data: resentLink,
+          });
+
+    } catch (error) {
+        console.log("error",error);
+        return next(new ErrorHandler(error.message,500))
+    }
+}
+
+export const resetPassword=async(req,res,next)=>{
+    try {
+        const {otp,password}=req.body;
+        const valid=await resetPasswordValidation(req.body);
+        if(!valid||(valid&&valid.error)){
+            return next(new ErrorHandler(valid.error,400));
+        }
+        const checkOtp=await MobileVerification.findOne({otp:otp});
+        if(!checkOtp){
+            return next(new ErrorHandler("Invalid OTP",400));
+        }
+        if(checkOtp.expiryTime<Date.now()){
+            return next(new ErrorHandler("OTP Expired",400));
+        }
+        const user=await User.findOne({
+            $or:[
+                {email:checkOtp.email},
+                {mobile:checkOtp.mobile}
+            ]
+        });
+        if(!user){
+            return next(new ErrorHandler("User not found",400));
+        }
+        const changePwd=await bcrypt.hash(password,10);
+        const savePwd=await User.findByIdAndUpdate(user._id,{
+            password:changePwd
+        })
+        sendResponse({
+            res,
+            message: "Password Reset Successfully",
+            data: null,
+          });
+    } catch (error) {
+        console.log("err",error.message);
+        return next(new ErrorHandler(error.message,500))
+    }
+}
+

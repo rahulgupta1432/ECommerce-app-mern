@@ -16,6 +16,7 @@ const userSchema=new mongoose.Schema({
     mobile:{
         type:Number,
         // required:true
+        default:'1234567890'
     },
     address:{
         type:String,

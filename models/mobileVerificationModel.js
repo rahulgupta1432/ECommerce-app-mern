@@ -3,7 +3,11 @@ import mongoose from "mongoose";
 const mobileVerificationSchema=new mongoose.Schema({
     mobile:{
         type:Number,
-        required:true
+        required:false
+    },
+    email:{
+        type:String,
+        required:false
     },
     otp:{
         type:Number,
@@ -15,6 +19,13 @@ const mobileVerificationSchema=new mongoose.Schema({
     }
 },{
     timestamps:true
+});
+
+mobileVerificationSchema.pre('validate', function(next) {
+    if (!this.mobile && !this.email) {
+        return next(new Error('Either mobile or email must be provided.'));
+    }
+    next();
 });
 
 mobileVerificationSchema.index({expiresAt:5},{expireAfterSeconds:0})

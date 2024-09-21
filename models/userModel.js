@@ -7,7 +7,7 @@ const userSchema=new mongoose.Schema({
     },
     email:{
         type:String,
-        required:false
+        required:true
     },
     password:{
         type:String,
@@ -15,7 +15,7 @@ const userSchema=new mongoose.Schema({
     },
     mobile:{
         type:Number,
-        required:true
+        // required:true
     },
     address:{
         type:String,

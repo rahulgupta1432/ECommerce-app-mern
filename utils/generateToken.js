@@ -21,8 +21,8 @@ const generateToken = async (userId, isAdmin, role,tokenVersion) => {
     
         // Generate JWT
         const token = jwt.sign(payload, secret, options);
-    
-        // Encrypt the token
+        // console.log("token",token);
+        
         return encryptToken(token);
 };
 

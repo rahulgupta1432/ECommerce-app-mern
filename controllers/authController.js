@@ -225,9 +225,6 @@ export const loginUser=async(req,res,next)=>{
 }
 
 
-// const res=await axios.post(`${API_URL}/api/v1/auth/forget-password`,{
-//     [isEmail?'email':'mobile']:email
-//   })
 export const forgetPassword=async(req,res,next)=>{
     try {
         const {email,mobile}=req.body;
@@ -259,10 +256,10 @@ export const forgetPassword=async(req,res,next)=>{
         }
         const resentLink=`${process.env.RESET_LINK}/reset-password?token=${token}&otp=${otp}`;
         if(email){
-            // const sendMessage=await sendResetLink(resentLink,checkUser.email);
-            // if(!sendMessage){
-            //     return next(new ErrorHandler("Error Sending in Message",500));
-            // }
+            const sendMessage=await sendResetLink(resentLink,checkUser.email);
+            if(!sendMessage){
+                return next(new ErrorHandler("Error Sending in Message",500));
+            }
         }
         sendResponse({
             res,

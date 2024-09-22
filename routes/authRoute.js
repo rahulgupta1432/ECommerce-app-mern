@@ -12,7 +12,9 @@ router.post("/forget-password",forgetPassword);
 router.post("/reset-password",resetPassword);
 
 router.get("/protect",Auth,(req,res)=>{
-    res.send("protected");
+    res.send({
+        ok:true
+    });
 })
 
 

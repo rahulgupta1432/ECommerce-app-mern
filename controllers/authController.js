@@ -225,6 +225,9 @@ export const loginUser=async(req,res,next)=>{
 }
 
 
+// const res=await axios.post(`${API_URL}/api/v1/auth/forget-password`,{
+//     [isEmail?'email':'mobile']:email
+//   })
 export const forgetPassword=async(req,res,next)=>{
     try {
         const {email,mobile}=req.body;

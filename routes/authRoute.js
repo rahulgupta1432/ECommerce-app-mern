@@ -24,5 +24,13 @@ router.get("/admin-auth",Auth,Admin,(req,res)=>{
 })
 
 
+// export const getAllCategories=async(req,res,next)=>{
+//     try{
+
+//     }catch(error){
+    // return next(new ErrorHandler(error.message,500));
+//     }
+// }
+
 
 export default router;

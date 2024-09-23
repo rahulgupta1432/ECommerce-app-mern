@@ -89,4 +89,31 @@ const resetPasswordValidation=async(user)=>{
   return { data: valid };
 }
 
+
+export const addProductValidation=async(data)=>{
+  const schema=joi.object({
+    name:joi.string().required(),
+    price:joi.number().required(),
+    description:joi.string().required(),
+    category:joi.string().required(),
+    quantity:joi.number().required(),
+    imageList:joi.array(),
+  });
+
+  let valid = await schema
+  .validateAsync(data, { abortEarly: false })
+  .catch((error) => {
+    return { error };
+  });
+
+if (!valid || (valid && valid.error)) {
+  let msg = [];
+  for (let i of valid.error.details) {
+    msg.push(i.message);
+  }
+  return { error: msg };
+}
+return { data: valid };
+}
+
 export {registerUserValidation,loginValidation,verifyOtpValidation,resetPasswordValidation}

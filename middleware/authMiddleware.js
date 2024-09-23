@@ -30,7 +30,10 @@ const Auth = async (req, res, next) => {
             let user = '';
 
             // Find the user based on the decoded userId
-            user = await User.findOne({_id:userId,role:role,isAdmin:isAdmin});
+            user = await User.findOne({$or:[
+                // _id:userId,role:role,isAdmin:isAdmin
+                {_id:userId,role:role,isAdmin:isAdmin},
+            ]});
             // console.log("user",userId,role)
             if (!user) {
                 return res.status(401).json({
@@ -69,18 +72,17 @@ const Auth = async (req, res, next) => {
     }
 };
 
-const admin = (req, res, next) => {
-  if (req.user &&req.user.isAdmin) {
-    next();
-  } else {
-    return res.status(401).json({
-      status: "fail",
-      code: 401,
-      message: "Not Authorized, As a Admin",
-      data: {},
-    
-    })
-  }
+export const Admin =async (req, res, next) => {
+    try {
+        const admin=await User.findById(req.user._id);
+        if(admin.role!==1&&!admin.isAdmin){
+            return next(new ErrorHandler("UnAuthorized Access",401))
+        }
+        next();
+    } catch (error) {
+        console.log("Is Admin",error);
+        return next(new ErrorHandler(error.message,500))
+    }
 };
 
 export default Auth;

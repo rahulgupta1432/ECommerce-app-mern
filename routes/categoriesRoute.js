@@ -1,7 +1,7 @@
 import express from "express";
 import Auth, { Admin } from "../middleware/authMiddleware.js";
 import { CreateCategories, deleteCategoriesById, getAllCategories, getCategories, updateCategories } from "../controllers/categoriesController.js";
-
+import searchQueryOnSingleField from "../middleware/utilify.js"
 const router=express.Router();
 
 
@@ -11,7 +11,7 @@ router.put("/update-category",updateCategories);
 
 router.get("/get-category",getCategories);
 
-router.get("/all-category",getAllCategories);
+router.get("/all-category", searchQueryOnSingleField(['name', 'slug']), getAllCategories);
 
 router.put("/delete-category",deleteCategoriesById);
 

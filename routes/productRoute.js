@@ -2,6 +2,7 @@ import express from "express";
 import Auth, { Admin } from "../middleware/authMiddleware.js";
 import { createProduct, deleteProductById, getAllProducts, getProduct, updateProduct } from "../controllers/productController.js";
 import { upload } from "../utils/uploadFile.js";
+import searchQueryOnSingleField from "../middleware/utilify.js"
 
 const router=express.Router();
 

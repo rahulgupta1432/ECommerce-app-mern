@@ -125,7 +125,9 @@ export const updateProduct=async(req,res,next)=>{
 export const getProduct=async(req,res,next)=>{
     try {
         const {productId}=req.query;
-        const product=await Product.findById(productId);
+        const product=await Product.findById(productId).populate({
+            path:'category'
+        })
         if(!product){
             return next(new ErrorHandler("ProductNot Found",404));
         }
@@ -146,7 +148,10 @@ export const getAllProducts=async(req,res,next)=>{
 
     try{
         let getProducts=[]
-        getProducts=await Product.find({isDeleted:false}).limit(limit).skip(skip).sort({createdAt:-1}).exec();
+        getProducts=await Product.find({isDeleted:false}).populate({
+            path:"category",
+            select:"name"
+        }).limit(limit).skip(skip).sort({createdAt:-1}).exec();
         if(!getProducts||getProducts.length===0){
             sendResponse({
                 res,

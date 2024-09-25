@@ -4,7 +4,7 @@ import Categories from "../models/categoriesModel.js";
 import slugify from "slugify";
 export const CreateCategories=async(req,res,next)=>{
     try {
-        const {name,image,parent_category_id}=req.body;
+        const {name,parent_category_id}=req.body;
         if(!name){
             return next(new ErrorHandler("Name is Required",400))
         }
@@ -17,7 +17,7 @@ export const CreateCategories=async(req,res,next)=>{
         const categories=await Categories.create({
             name,
             slug:slugify(name),
-            image,
+            image:req.file?.path,
             parent_category_id
         });
         if(!categories){

@@ -6,7 +6,7 @@ import searchQueryOnSingleField from "../middleware/utilify.js"
 
 const router=express.Router();
 
-router.post('/create-product', upload?.array('imageList'),createProduct);
+router.post('/add-product', upload?.array('imageList'),createProduct);
 router.put('/update-product', upload?.array('imageList'), updateProduct);
 router.get('/get-product',getProduct);
 router.get("/all-products",getAllProducts);

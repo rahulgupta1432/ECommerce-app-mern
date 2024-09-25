@@ -2,10 +2,11 @@ import express from "express";
 import Auth, { Admin } from "../middleware/authMiddleware.js";
 import { CreateCategories, deleteCategoriesById, getAllCategories, getCategories, updateCategories } from "../controllers/categoriesController.js";
 import searchQueryOnSingleField from "../middleware/utilify.js"
+import { upload } from "../utils/uploadFile.js";
 const router=express.Router();
 
 
-router.post("/create-category",CreateCategories);//Auth,Admin,
+router.post("/add-category",upload.single('image'),CreateCategories);//Auth,Admin,
 
 router.put("/update-category",updateCategories);
 

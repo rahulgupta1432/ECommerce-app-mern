@@ -60,7 +60,8 @@ export const updateProduct=async(req,res,next)=>{
     try{
         // console.log("Incoming request body:", req.body);
         const {productId}=req.query;
-        let {name,price,description,category,quantity,indices }=req.body;
+        let {name,price,description,category,quantity,indices = [0] }=req.body;
+        
 
         const checkProduct=await Product.findById(productId);
         if(!checkProduct){
@@ -74,6 +75,7 @@ export const updateProduct=async(req,res,next)=>{
         if(typeof indices==='string'){
             indices=JSON.parse(indices);
         }
+        
 
         const updatedImages = [...checkProduct.imageList]; // Get the current image list
 
@@ -143,7 +145,7 @@ export const getProduct=async(req,res,next)=>{
 
 export const getAllProducts=async(req,res,next)=>{
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 5;
     const skip=(page-1)*limit;
 
     try{

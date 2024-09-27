@@ -10,7 +10,7 @@ router.post('/add-product', upload?.array('imageList'),createProduct);
 router.put('/update-product', upload?.array('imageList'), updateProduct);
 router.get('/get-product',getProduct);
 router.get("/all-products",getAllProducts);
-router.put("/delete-product",deleteProductById);
+router.delete("/delete-product",deleteProductById);
 
 
 export default router;

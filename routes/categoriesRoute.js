@@ -8,13 +8,13 @@ const router=express.Router();
 
 router.post("/add-category",upload.single('image'),CreateCategories);//Auth,Admin,
 
-router.put("/update-category",updateCategories);
+router.put("/update-category",upload.single('image'),updateCategories);
 
 router.get("/get-category",getCategories);
 
 router.get("/all-category", searchQueryOnSingleField(['name', 'slug']), getAllCategories);
 
-router.put("/delete-category",deleteCategoriesById);
+router.delete("/delete-category",deleteCategoriesById);
 
 
 router.get("/user-auth",Auth,(req,res)=>{

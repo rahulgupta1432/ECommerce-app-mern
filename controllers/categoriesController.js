@@ -35,7 +35,9 @@ export const CreateCategories=async(req,res,next)=>{
 
 export const updateCategories=async(req,res,next)=>{
     try {
-        const {categoryId,name,image,parent_category_id}=req.body;
+        const {categoryId}=req.query;
+        const {name,parent_category_id}=req.body;
+        
         if(!categoryId){
             return next(new ErrorHandler("Category Id is Required",400))
         }
@@ -43,10 +45,11 @@ export const updateCategories=async(req,res,next)=>{
         if(!checkExistCategory){
             return next(new ErrorHandler("Category Not Found",404))
         }
+        console.log(slugify(JSON.stringify(name)));
         const categories=await Categories.findByIdAndUpdate(categoryId,{
             name,
-            slug:slugify(name),
-            image,
+            slug:slugify(JSON.stringify(name)),
+            image:req.file?.path,
             parent_category_id
         },{new:true});
         if(!categories){
@@ -93,7 +96,7 @@ export const getAllCategories = async (req, res, next) => {
         }
         
 
-        console.log("Final Pipeline before count:", JSON.stringify(pipeline, null, 2));
+        // console.log("Final Pipeline before count:", JSON.stringify(pipeline, null, 2));
 
         // Count total categories for pagination
         const totalCategories = await Categories.countDocuments(
@@ -108,7 +111,7 @@ export const getAllCategories = async (req, res, next) => {
             { $limit: limit }
         ]).exec();
 
-        console.log("Categories Retrieved:", JSON.stringify(getCategories, null, 2)); // Log here
+        // console.log("Categories Retrieved:", JSON.stringify(getCategories, null, 2)); // Log here
 
         if (!getCategories || getCategories.length === 0) {
             return sendResponse({

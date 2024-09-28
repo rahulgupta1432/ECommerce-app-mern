@@ -45,7 +45,6 @@ export const updateCategories=async(req,res,next)=>{
         if(!checkExistCategory){
             return next(new ErrorHandler("Category Not Found",404))
         }
-        console.log(slugify(JSON.stringify(name)));
         const categories=await Categories.findByIdAndUpdate(categoryId,{
             name,
             slug:slugify(JSON.stringify(name)),
@@ -212,7 +211,6 @@ export const getAllCategories = async (req, res, next) => {
         });
 
     } catch (error) {
-        console.error("Error in getAllCategories:", error);
         return next(new ErrorHandler(error.message, 500));
     }
 };

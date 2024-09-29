@@ -145,15 +145,28 @@ export const getProduct=async(req,res,next)=>{
 
 export const getAllProducts=async(req,res,next)=>{
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) ;
+    let limit;
     const skip=(page-1)*limit;
+    const type=req.query.type;
 
     try{
         let getProducts=[]
-        getProducts=await Product.find({isDeleted:false}).populate({
-            path:"category",
-            select:"name"
-        }).limit(limit).skip(skip).sort({createdAt:-1}).exec();
+        if (type === 'Admin') {
+            limit = parseInt(req.query.limit) || 10; // Default limit for Admin
+        } else {
+            limit = 50; // Default limit for non-Admin or missing type
+        }
+
+        getProducts = await Product.find({ isDeleted: false })
+            .populate({
+                path: "category",
+                select: "name"
+            })
+            .limit(limit)
+            .skip(skip)
+            .sort({ createdAt: -1 })
+            .exec();
+
         if(!getProducts||getProducts.length===0){
             sendResponse({
                 res,
@@ -161,16 +174,18 @@ export const getAllProducts=async(req,res,next)=>{
                 data:[]
             })
         }
-        const pagination={};
-        pagination.limit = limit;
-        pagination.page = page;
-        pagination.pages = Math.ceil(getProducts / limit);
-        pagination.nextPage = parseInt(page) < pagination.pages ? parseInt(page) + 1 : null;
-        pagination.prevPage = page > 1 ? parseInt(page) - 1 : null;
-        pagination.hasPrevPage = page > 1;
-        pagination.hasNextPage = page < pagination.pages;
-        
-        getProducts.push(pagination)
+        const totalProducts = await Product.countDocuments({ isDeleted: false });
+        const pagination = {
+            limit,
+            page,
+            pages: Math.ceil(totalProducts / limit),
+            nextPage: page < Math.ceil(totalProducts / limit) ? page + 1 : null,
+            prevPage: page > 1 ? page - 1 : null,
+            hasPrevPage: page > 1,
+            hasNextPage: page < Math.ceil(totalProducts / limit)
+        };
+
+        getProducts.push(pagination);
         
 
         sendResponse({

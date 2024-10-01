@@ -5,6 +5,9 @@ import Product from "../models/productModel.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import sendResponse from "../utils/sendResponse.js";
 import { uploadFile } from "../utils/uploadFile.js";
+import mongoose from "mongoose";
+import wishListModel from "../models/wishListModel.js";
+import User from "../models/userModel.js";
 
 
 export const createProduct = async (req, res, next) => {
@@ -49,7 +52,6 @@ export const createProduct = async (req, res, next) => {
                 data: product
             });
         } catch (error) {
-            console.log("error",error.message);
             return next(new ErrorHandler(error.message, 500));
         }
 };
@@ -58,7 +60,6 @@ export const createProduct = async (req, res, next) => {
 
 export const updateProduct=async(req,res,next)=>{
     try{
-        // console.log("Incoming request body:", req.body);
         const {productId}=req.query;
         let {name,price,description,category,quantity,indices = [0] }=req.body;
         
@@ -69,7 +70,7 @@ export const updateProduct=async(req,res,next)=>{
         }
         
         const productImagePaths = req.files ? await Promise.all(req.files.map(async (file) => {
-            return file.path; // Assuming you're saving the file path directly
+            return file.path;
         })) : [];
 
         if(typeof indices==='string'){
@@ -148,6 +149,8 @@ export const getAllProducts=async(req,res,next)=>{
     let limit;
     const skip=(page-1)*limit;
     const type=req.query.type;
+    const {userId}=req.query;
+    console.log(userId);
 
     try{
         let getProducts=[]
@@ -185,13 +188,24 @@ export const getAllProducts=async(req,res,next)=>{
             hasNextPage: page < Math.ceil(totalProducts / limit)
         };
 
-        getProducts.push(pagination);
-        
+        const data=await Promise.all(
+            getProducts?.map(async(product)=>{
+                const wishList=await wishListModel.findOne({user:userId});
+                        const isWishListed = wishList && wishList.product.includes(product._id);
+                        return {
+                            ...product?.toObject(),
+                            isWishListed:isWishListed?true:false
+                        }
+                    })
+                )
+                
+                // getProducts.push(pagination);
+                data.push(pagination)
 
         sendResponse({
             res,
             message:"All Products are Fetched successfully",
-            data:getProducts
+            data:data
         })
         
     }catch(error){
@@ -216,5 +230,132 @@ export const deleteProductById=async(req,res,next)=>{
         })
     }catch(error){
     return next(new ErrorHandler(error.message,500));
+    }
+}
+
+
+
+
+export const productFilters=async(req,res,next)=>{
+    try {
+        const page = parseInt(req.query.page) || 1;
+        let limit=parseInt(req.query.limit)||50;
+        const skip=(page-1)*limit;
+        const {checked,radioMin,radioMax,search,userId}=req.body;
+        
+        let args = {};       
+        if (checked && Array.isArray(checked) && checked.length > 0) {
+            const categoryIds = checked.map(id => new mongoose.Types.ObjectId(id));
+            args.category = { $in: categoryIds }; // Use $in for multiple categories
+        }
+        if (radioMin !== undefined && radioMax !== undefined) {
+            args.price = { $gte: parseFloat(radioMin), $lte: parseFloat(radioMax) };
+        }
+        if(search){
+            args.name = { $regex: search, $options: 'i' };
+        }
+
+        let filterProducts;
+        filterProducts = await Product.find({
+            isDeleted: false,
+            ...args
+        }).limit(limit).skip(skip).sort({createdAt:-1})
+        .populate({
+            path: 'category',
+            select: 'name'
+        });
+        console.log(args);
+
+        const totalProducts=await Product.countDocuments({
+            isDeleted:false,
+            ...args
+        });
+        const pagination={
+            limit,
+            page,
+            pages:Math.ceil(totalProducts/limit),
+            nextPage:page<Math.ceil(totalProducts/limit)?page+1:null,
+            prevPage:page>1?page-1:null,
+            hasPrevPage:page>1,
+            hasNextPage:page<Math.ceil(totalProducts/limit)
+        }
+        const data=await Promise.all(filterProducts?.map(async(product)=>{
+            const checkWishlist=await wishListModel.findOne({user:userId});
+            const isWishListed=checkWishlist&&checkWishlist.product.includes(product._id)?true:false
+            return {
+                ...product.toObject(),
+                isWishListed:isWishListed?true:false
+            }
+        }))
+
+        filterProducts.push(pagination);
+
+
+        if(!filterProducts||filterProducts.length===0){
+            sendResponse({
+                res,
+                message:"No Filter Data Found",
+                data:[]
+            })
+        }
+
+        sendResponse({
+            res,
+            message:"Filter Data Fetched successfully",
+            data:data
+        })
+    } catch (error) {
+        return next(new ErrorHandler(error.message,500));
+    }
+}
+
+
+
+
+// wishlist
+export const toggleWishlist=async(req,res,next)=>{
+    try {
+        const {productId,userId}=req.query;
+        if(!productId||!userId){
+            return next(new ErrorHandler("Please Provide Product Id and User Id",400));
+        }
+        const checkUser=await User.findById(userId);
+        if(!checkUser){
+            return next(new ErrorHandler("User Not Found",400));    
+        }
+        const product=await Product.findById(productId);
+        if(!product){
+            return next(new ErrorHandler("Product Not Found",400));
+        }
+        let message;
+        const checkProductInWishlist=await wishListModel.findOne({user:userId});
+        if(!checkProductInWishlist){
+            const createWishlist=await wishListModel.create({
+                user:userId,
+                product:productId,
+                isActive:true
+            })
+            message="Wishlist item added successfully"
+        }else{
+            const productIndex=checkProductInWishlist.product.indexOf(productId);
+            if(productIndex===-1){
+                checkProductInWishlist.product.push(productId);
+                message = "Wishlist item added successfully.";
+            }else{
+                // checkProductInWishlist.product.splice(productIndex, 1);
+                checkProductInWishlist.product.pull(productId);
+                message = "Wishlist item removed successfully.";
+
+            }
+            await checkProductInWishlist.save();
+        }
+        sendResponse({
+            res,
+            message:message,
+            data:checkProductInWishlist
+        })
+    } catch (error) {
+        console.log(error)
+        return next(new ErrorHandler(error.message,500));
     }
 }

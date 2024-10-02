@@ -359,3 +359,67 @@ export const toggleWishlist=async(req,res,next)=>{
         return next(new ErrorHandler(error.message,500));
     }
 }
+
+
+export const searchAllProducts=async(req,res,next)=>{
+    try {
+        const page = parseInt(req.query.page) || 1;
+        let limit=parseInt(req.query.limit)||50;
+        const skip=(page-1)*limit;
+        const {search,userId}=req.query;
+        const regex=new RegExp(search,'i');
+        let products = await Product.find({
+            isDeleted: false,
+            $or: [
+                { name: regex },
+                { description: regex }
+            ]
+        }).limit(limit).skip(skip).sort({ createdAt: -1 }).populate({
+            path: 'category',
+            select: 'name'
+        })
+        .exec();
+        const totalProducts=await Product.countDocuments({
+            isDeleted:false,
+            $or: [
+                { name: regex },
+                { description: regex }
+            ]
+        });
+        if(!products||products.length===0){
+            sendResponse({
+                res,
+                message:"No Products Found",
+                data:[]
+            })
+        }
+
+        const pagination={
+            limit,
+            page,
+            pages:Math.ceil(totalProducts/limit),
+            nextPage:page<Math.ceil(totalProducts/limit)?page+1:null,
+            prevPage:page>1?page-1:null,
+            hasPrevPage:page>1,
+            hasNextPage:page<Math.ceil(totalProducts/limit)
+        }
+        const data=await Promise.all(products?.map(async(product)=>{
+            const checkWishlist=await wishListModel.findOne({user:userId});
+            const isWishListed=checkWishlist&&checkWishlist.product.includes(product._id)?true:false
+            return {
+                ...product.toObject(),
+                isWishListed:isWishListed?true:false
+            }
+        }))
+
+        products.push(pagination);
+
+        sendResponse({
+            res,
+            message:"All Products Fetched successfully",
+            data:data
+        })
+    } catch (error) {
+        return next(new ErrorHandler(error.message,500));
+}
+}

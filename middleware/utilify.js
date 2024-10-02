@@ -17,6 +17,7 @@
 export default function searchQueryOnSingleField(fields) {
     return (req, res, next) => {
         const query = req.query.search;
+        console.log("Search query received:", query); // Log the received search query
 
         if (query) {
             const matchStages = fields.map(field => ({

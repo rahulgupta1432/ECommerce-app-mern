@@ -17,6 +17,6 @@ router.post('/product-filters',productFilters);
 
 router.get('/toggle-product-wishlist',toggleWishlist);
 
-router.get('/search-product',searchQueryOnSingleField(['name','price','description']),searchAllProducts);
+router.get('/search-product',searchAllProducts);
 
 export default router;

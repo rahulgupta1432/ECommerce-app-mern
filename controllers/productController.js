@@ -4,7 +4,6 @@ import Categories from "../models/categoriesModel.js";
 import Product from "../models/productModel.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import sendResponse from "../utils/sendResponse.js";
-import { uploadFile } from "../utils/uploadFile.js";
 import mongoose from "mongoose";
 import wishListModel from "../models/wishListModel.js";
 import User from "../models/userModel.js";
@@ -150,7 +149,6 @@ export const getAllProducts=async(req,res,next)=>{
     const skip=(page-1)*limit;
     const type=req.query.type;
     const {userId}=req.query;
-    console.log(userId);
 
     try{
         let getProducts=[]
@@ -239,14 +237,14 @@ export const deleteProductById=async(req,res,next)=>{
 export const productFilters=async(req,res,next)=>{
     try {
         const page = parseInt(req.query.page) || 1;
-        let limit=parseInt(req.body.limit)||50;
+        let limit=req.body.limit||50;
         const skip=(page-1)*limit;
         const {checked,radioMin,radioMax,search,userId}=req.body;
         
         let args = {};       
         if (checked && Array.isArray(checked) && checked.length > 0) {
             const categoryIds = checked.map(id => new mongoose.Types.ObjectId(id));
-            args.category = { $in: categoryIds }; // Use $in for multiple categories
+            args.category = { $in: categoryIds }; 
         }
         if (radioMin !== undefined && radioMax !== undefined) {
             args.price = { $gte: parseFloat(radioMin), $lte: parseFloat(radioMax) };
@@ -259,18 +257,18 @@ export const productFilters=async(req,res,next)=>{
         filterProducts = await Product.find({
             isDeleted: false,
             ...args
-        }).limit(limit).skip(skip).sort({createdAt:-1})
+        })
+        .limit(typeof limit==="number"?limit:null)
+        .skip(skip).sort({createdAt:-1})
         .populate({
             path: 'category',
             select: 'name'
         });
-        console.log(args);
 
         const totalProducts=await Product.countDocuments({
             isDeleted:false,
             ...args
         });
-        console.log(totalProducts)
         const pagination={
             limit,
             page,
@@ -357,7 +355,6 @@ export const toggleWishlist=async(req,res,next)=>{
             data:checkProductInWishlist
         })
     } catch (error) {
-        console.log(error)
         return next(new ErrorHandler(error.message,500));
     }
 }
@@ -369,25 +366,42 @@ export const searchAllProducts=async(req,res,next)=>{
         let limit=parseInt(req.query.limit)||50;
         const skip=(page-1)*limit;
         const {search,userId}=req.query;
-        const regex=new RegExp(search,'i');
-        let products = await Product.find({
-            isDeleted: false,
-            $or: [
-                { name: regex },
-                { description: regex }
-            ]
-        }).limit(limit).skip(skip).sort({ createdAt: -1 }).populate({
+        let query = { isDeleted: false };
+        const checkUser=await User.findById(userId);
+        console.log(checkUser);
+
+        if(userId){
+            if(!checkUser){
+                return next(new ErrorHandler("User Not Found",400));
+            }
+        }
+        if (search) {
+            const regex = new RegExp(search, 'i');
+            query = {
+                ...query,
+                $or: [
+                    { name: regex },
+                    { description: regex },
+                    { comment: regex }
+                    // { name: new RegExp(searchKeyword, 'i') },
+                    // { description: new RegExp(searchKeyword, 'i') },
+                    // { comment: new RegExp(searchKeyword, 'i') }
+            
+                ]
+            };
+        }
+        // if (userId) {
+        //     query.userId = userId; // Ensure that this matches how the userId is stored in the Product model
+        // }        
+        console.log('Final Query:', query);
+        let products = await Product.find(query)
+        .limit(limit).skip(skip).sort({ createdAt: -1 }).populate({
             path: 'category',
             select: 'name'
         })
         .exec();
-        const totalProducts=await Product.countDocuments({
-            isDeleted:false,
-            $or: [
-                { name: regex },
-                { description: regex }
-            ]
-        });
+
+        const totalProducts=await Product.countDocuments(query);
         if(!products||products.length===0){
             sendResponse({
                 res,
@@ -414,7 +428,7 @@ export const searchAllProducts=async(req,res,next)=>{
             }
         }))
 
-        products.push(pagination);
+        data.push(pagination);
 
         sendResponse({
             res,
@@ -422,6 +436,7 @@ export const searchAllProducts=async(req,res,next)=>{
             data:data
         })
     } catch (error) {
+        console.log(error)
         return next(new ErrorHandler(error.message,500));
-}
+    }
 }

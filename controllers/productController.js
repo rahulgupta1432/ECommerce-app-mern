@@ -239,7 +239,7 @@ export const deleteProductById=async(req,res,next)=>{
 export const productFilters=async(req,res,next)=>{
     try {
         const page = parseInt(req.query.page) || 1;
-        let limit=parseInt(req.query.limit)||50;
+        let limit=parseInt(req.body.limit)||50;
         const skip=(page-1)*limit;
         const {checked,radioMin,radioMax,search,userId}=req.body;
         
@@ -270,6 +270,7 @@ export const productFilters=async(req,res,next)=>{
             isDeleted:false,
             ...args
         });
+        console.log(totalProducts)
         const pagination={
             limit,
             page,
@@ -288,7 +289,8 @@ export const productFilters=async(req,res,next)=>{
             }
         }))
 
-        filterProducts.push(pagination);
+        data.push(pagination);
+        
 
 
         if(!filterProducts||filterProducts.length===0){

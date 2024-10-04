@@ -368,7 +368,6 @@ export const searchAllProducts=async(req,res,next)=>{
         const {search,userId}=req.query;
         let query = { isDeleted: false };
         const checkUser=await User.findById(userId);
-        console.log(checkUser);
 
         if(userId){
             if(!checkUser){
@@ -440,3 +439,78 @@ export const searchAllProducts=async(req,res,next)=>{
         return next(new ErrorHandler(error.message,500));
     }
 }
+
+
+
+export const getSingleProductDetails=async(req,res,next)=>{
+    try {
+        const page = parseInt(req.query.page) || 1;
+        let limit=parseInt(req.query.limit)||50;
+        const skip=(page-1)*limit;
+        const {productId}=req.query;
+        if(!productId){
+            return next(new ErrorHandler("Please Provide Product Id",400));
+        }
+
+        let products = await Product.findById(productId)
+        .limit(limit).skip(skip).sort({ createdAt: -1 }).populate({
+            path: 'category',
+            select: 'name'
+        })
+        .exec();
+
+        const totalProducts=await Product.countDocuments(productId);
+        if(!products||products.length===0){
+            sendResponse({
+                res,
+                message:"No Products Found",
+                data:[]
+            })
+        }
+
+        const similarProducts = await Product.find({
+            category: products.category._id,
+            _id: { $ne: products._id } // Exclude the current product
+        })
+            .limit(limit)
+            .skip(skip)
+            .sort({ createdAt: -1 })
+            .populate({
+                path: 'category',
+                select: 'name'
+            });
+
+
+        const pagination={
+            limit,
+            page,
+            pages:Math.ceil(totalProducts/limit),
+            nextPage:page<Math.ceil(totalProducts/limit)?page+1:null,
+            prevPage:page>1?page-1:null,
+            hasPrevPage:page>1,
+            hasNextPage:page<Math.ceil(totalProducts/limit)
+        }
+        const isWishlisted=await wishListModel.findOne({
+            user:req.query.userId,
+            product:productId
+        });
+        const data=[];
+        data.push({
+            ...products.toObject(),
+            isWishListed:isWishlisted?true:false
+        },
+        {similarProducts},
+        {
+            ...pagination
+        })
+        sendResponse({
+            res,
+            message:"All Products Fetched successfully",
+            data:data
+        })
+    } catch (error) {
+        console.log(error)
+        return next(new ErrorHandler(error.message,500));
+    }
+}
+

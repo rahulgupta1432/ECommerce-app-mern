@@ -14,7 +14,6 @@ import productRouter from "./routes/productRoute.js"
 // import './utils/postmanUpdationALgo.js';
 import { seedOtpData } from './config/seeder.js';
 const utcDate = new Date(Date.now()).toISOString();
-import bodyParser from 'body-parser';
 
 // console.log(utcDate);
 

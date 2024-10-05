@@ -392,7 +392,6 @@ export const searchAllProducts=async(req,res,next)=>{
         // if (userId) {
         //     query.userId = userId; // Ensure that this matches how the userId is stored in the Product model
         // }        
-        console.log('Final Query:', query);
         let products = await Product.find(query)
         .limit(limit).skip(skip).sort({ createdAt: -1 }).populate({
             path: 'category',
@@ -435,7 +434,6 @@ export const searchAllProducts=async(req,res,next)=>{
             data:data
         })
     } catch (error) {
-        console.log(error)
         return next(new ErrorHandler(error.message,500));
     }
 }
@@ -494,8 +492,6 @@ export const getSingleProductDetails=async(req,res,next)=>{
             user:userId,
             product:products._id
         });
-        console.log("check",isWishlisted)
-        console.log("rwq.u",req.query)
         const data=[];
         data.push({
             ...products.toObject(),
@@ -516,3 +512,70 @@ export const getSingleProductDetails=async(req,res,next)=>{
     }
 }
 
+
+
+export const categoryBasedProduct = async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit); 
+    const skip = (page - 1) * (limit || 1000);
+
+    try {
+        const { categoryId } = req.query;
+        if (!categoryId) {
+            return next(new ErrorHandler("Please Provide Category Id", 400));
+        }
+
+        // Count total products that are not deleted
+        const totalProducts = await Product.countDocuments({
+            category: categoryId,
+            isDeleted: false
+        });
+
+        // Set limit to totalProducts if limit is not provided
+        const productLimit = limit ? limit : totalProducts;
+
+        // Fetch products with pagination
+        const products = await Product.find({ category: categoryId, isDeleted: false })
+            .limit(productLimit)
+            .skip(skip)
+            .sort({ createdAt: -1 })
+            .populate({
+                path: 'category',
+                select: 'name'
+            });
+
+        // Create pagination object
+        const pagination = {
+            limit: productLimit,
+            page,
+            pages: Math.ceil(totalProducts / (limit || totalProducts)), // Handle no limit case
+            nextPage: page < Math.ceil(totalProducts / (limit || totalProducts)) ? page + 1 : null,
+            prevPage: page > 1 ? page - 1 : null,
+            hasPrevPage: page > 1,
+            hasNextPage: page < Math.ceil(totalProducts / (limit || totalProducts))
+        };
+
+        // Check wishlist status for each product
+        const data = await Promise.all(
+            products.map(async (product) => {
+                const checkWishlist = await wishListModel.findOne({ user: req.query.userId });
+                const isWishListed = checkWishlist && checkWishlist.product.includes(product._id);
+                return {
+                    ...product.toObject(),
+                    isWishListed
+                };
+            })
+        );
+        data.push(pagination);
+
+        // Send response
+        sendResponse({
+            res,
+            message: "All Products Fetched successfully",
+            data: data
+        });
+
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+};

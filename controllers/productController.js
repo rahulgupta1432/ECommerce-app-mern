@@ -447,7 +447,7 @@ export const getSingleProductDetails=async(req,res,next)=>{
         const page = parseInt(req.query.page) || 1;
         let limit=parseInt(req.query.limit)||50;
         const skip=(page-1)*limit;
-        const {productId}=req.query;
+        const {productId,userId}=req.query;
         if(!productId){
             return next(new ErrorHandler("Please Provide Product Id",400));
         }
@@ -491,9 +491,11 @@ export const getSingleProductDetails=async(req,res,next)=>{
             hasNextPage:page<Math.ceil(totalProducts/limit)
         }
         const isWishlisted=await wishListModel.findOne({
-            user:req.query.userId,
-            product:productId
+            user:userId,
+            product:products._id
         });
+        console.log("check",isWishlisted)
+        console.log("rwq.u",req.query)
         const data=[];
         data.push({
             ...products.toObject(),

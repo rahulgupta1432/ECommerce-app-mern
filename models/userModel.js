@@ -26,6 +26,10 @@ const userSchema=new mongoose.Schema({
         type:String,
         // required:true
     },
+    image:{
+        type:String,
+        default:"https://avatar.iran.liara.run/public"
+    },
     role:{
         type:Number,
         default:0

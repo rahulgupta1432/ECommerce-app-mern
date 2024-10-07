@@ -27,7 +27,9 @@ export const registerUser=async(req,res,next)=>{
         }
         
         const userEmail = email || `${username}@gmail.com`;
-        const user= await User.create({ username, email:userEmail, password,mobile,role });
+        const user= await User.create({ username, email:userEmail, password,mobile,role,
+            image: `https://avatar.iran.liara.run/public?username=${username}`
+         });
         // const token=await generateToken(user.id,user.isAdmin,role,user.tokenVersion);
         user.password=undefined;
         const data={...user.toObject()}

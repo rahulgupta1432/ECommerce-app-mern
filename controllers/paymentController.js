@@ -32,6 +32,7 @@ export const getPaymentGatewayToken=async(req,res,next)=>{
 export const paymentForOrder=async(req,res,next)=>{
     try {
         console.log("aaya")
+        const {paymentMode}=req.query;
         const {cart,nonce,quantity,totalPayment}=req.body;
         let total=0;
         // cart.map(i=>total+=i.price);
@@ -58,7 +59,8 @@ export const paymentForOrder=async(req,res,next)=>{
                     buyer: req.user._id,
                     status: "Processing",
                     totalPayment: totalPayment,
-                    quantity: quantity
+                    quantity: quantity,
+                    paymentMode:paymentMode
                 }).save();
                 console.log("newTransaction",newTransaction,"end")
                 console.log("order",order,"end")

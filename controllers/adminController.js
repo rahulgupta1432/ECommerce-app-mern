@@ -56,3 +56,33 @@ export const getAllOrders=async(req,res,next)=>{
         return next(new ErrorHandler(error.message,500));
     }
 }
+
+
+
+export const getOrderById=async(req,res,next)=>{    
+    try{
+        const {orderId}=req.query;
+        const getOrders = await Orders.findById(orderId)
+            .populate({
+                path: "product"
+            })
+            .sort({ createdAt: -1 })
+            .exec();
+
+        if(!getOrders||getOrders.length===0){
+            sendResponse({
+                res,
+                message:"No Orders Found",
+                data:[]
+            })
+        }
+        sendResponse({
+            res,
+            message:"All Orders are Fetched successfully",
+            data:getOrders
+        })
+        
+    }catch(error){
+        return next(new ErrorHandler(error.message,500));
+    }
+}

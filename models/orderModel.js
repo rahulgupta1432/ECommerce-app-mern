@@ -20,10 +20,13 @@ const orderSchema=new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:'User'
     },
+    paymentMode:{
+        type:String
+    },
     status:{
         type:String,
-        default:'Not Process',
-        enum:["Not Process","Processing","Shipped","Delivered","Cancel"]
+        default:'Placed',
+        enum:["Placed","Shipped","Delivered","Cancelled"]
     }
 },{
     timestamps:true

@@ -13,6 +13,7 @@ import categoriesRouter from "./routes/categoriesRoute.js"
 import productRouter from "./routes/productRoute.js"
 import adminRouter from "./routes/adminRoute.js"
 import paymentRouter from "./routes/paymentRoute.js"
+import userRouter from "./routes/projectRoute.js"
 // import './utils/postmanUpdationALgo.js';
 import { seedOtpData } from './config/seeder.js';
 const utcDate = new Date(Date.now()).toISOString();
@@ -36,6 +37,7 @@ app.use("/api/v1/categories",categoriesRouter);
 app.use("/api/v1/product",productRouter);
 app.use("/api/v1/admin",adminRouter);
 app.use("/api/v1/payment",paymentRouter);
+app.use("/api/v1/user",userRouter);
 
 app.use((err, req, res, next) => {
     err.statusCode = err.statusCode || 500;

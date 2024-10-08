@@ -32,7 +32,7 @@ export const getPaymentGatewayToken=async(req,res,next)=>{
 export const paymentForOrder=async(req,res,next)=>{
     try {
         console.log("aaya")
-        const {cart,nonce}=req.body;
+        const {cart,nonce,quantity,totalPayment}=req.body;
         let total=0;
         // cart.map(i=>total+=i.price);
         cart.map((i)=>{
@@ -40,35 +40,37 @@ export const paymentForOrder=async(req,res,next)=>{
         })
         console.log("query",req.query,"end");
         console.log("body",req.body,"end");
-        let order;
-        let newTransaction=gateway.transaction.sale({
-            amount:total,
+        gateway.transaction.sale({
+            amount: total,
             paymentMethodNonce: nonce[0],
-            options:{
+            options: {
                 submitForSettlement: true,
             }
-        },
-        function(error,resp){
-            if(error){
-                return next(new ErrorHandler(error.message,500));
+        }, async (error, resp) => { // Callback function ko async bana rahe hain
+            if (error) {
+                console.log(error);
+                return next(new ErrorHandler(error.message, 500));
             }
-            if(resp){
-                order=new Order({
-                    product:cart,
-                    payment:resp,
-                    buyer:req.user._id,
-                    status:"Processing"
+            if (resp) {
+                const order = await new Order({
+                    product: cart,
+                    payment: resp,
+                    buyer: req.user._id,
+                    status: "Processing",
+                    totalPayment: totalPayment,
+                    quantity: quantity
                 }).save();
+                console.log("newTransaction",newTransaction,"end")
+                console.log("order",order,"end")
+
                 sendResponse({
                     res,
-                    message:"Payment Successfull",
-                    data:order
-                })
+                    message: "Payment Successful",
+                    data: order
+                });
             }
-        }
-    )
-    console.log("newTransaction",newTransaction,"end")
-    console.log("order",order,"end")
+        });
+    
     } catch (error) {
         console.log(error)
         return next(new ErrorHandler(error.message,500));

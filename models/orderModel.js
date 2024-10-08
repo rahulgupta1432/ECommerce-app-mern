@@ -6,7 +6,16 @@ const orderSchema=new mongoose.Schema({
         ref:'Product',
         required:true
     }],
-    payment:{},
+    quantity:{
+        type:String,
+        default:1
+    },
+    totalPayment:{
+        type:String,
+        required:true
+    },
+    payment:{
+    },
     buyer:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'User'

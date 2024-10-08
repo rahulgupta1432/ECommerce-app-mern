@@ -1,49 +1,58 @@
-import User from "../models/userModel.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import sendResponse from "../utils/sendResponse.js";
+import Orders from "../models/orderModel.js"
 
-export const getProfileByUserId=async(req,res,next)=>{
-    try {
-        const {userId}=req.query;
-        const user=await User.findById(userId);
-        if(!user){
-            return next(new ErrorHandler("User not found",404));
+export const getAllOrders=async(req,res,next)=>{
+    const page = parseInt(req.query.page) || 1;
+    let limit;
+    const skip=(page-1)*limit;
+    const type=req.query.type;
+    const {userId}=req.query;
+
+    try{
+        let getOrders=[]
+        if (type === 'Admin') {
+            limit = parseInt(req.query.limit) || 10; 
+        } else {
+            limit = 50; 
         }
-        user.password=undefined;
+
+        getOrders = await Orders.find()
+            .populate({
+                path: "product"
+            })
+            .limit(limit)
+            .skip(skip)
+            .sort({ createdAt: -1 })
+            .exec();
+
+        if(!getOrders||getOrders.length===0){
+            sendResponse({
+                res,
+                message:"No Orders Found",
+                data:[]
+            })
+        }
+        const totalOrders = await Orders.countDocuments({ isDeleted: false });
+        const pagination = {
+            limit,
+            page,
+            pages: Math.ceil(totalOrders / limit),
+            nextPage: page < Math.ceil(totalOrders / limit) ? page + 1 : null,
+            prevPage: page > 1 ? page - 1 : null,
+            hasPrevPage: page > 1,
+            hasNextPage: page < Math.ceil(totalOrders / limit)
+        };
+
+            getOrders.push(pagination)
+
         sendResponse({
             res,
-            message:"Profile updated successfully",
-            data:user
+            message:"All Orders are Fetched successfully",
+            data:getOrders
         })
-    } catch (error) {
-        return next(new ErrorHandler(error.message,500));
-    }
-}
-
-export const updateProfileInfo=async(req,res,next)=>{
-    try {
-        const {username,email,mobile,userId}=req.body;
-        const user=await User.findById(userId);
-        if(!user){
-            return next(new ErrorHandler("User not found",404));
-        }
         
-        const updateProfile=await User.findByIdAndUpdate(userId,{
-            image:req?.file?.path,
-            username,
-            email,
-            mobile
-        },{new:true});
-        console.log(updateProfile)
-        if(!updateProfile){
-            return next(new ErrorHandler("User not found",400));
-        }
-        sendResponse({
-            res,
-            message:"Profile updated successfully",
-            data:updateProfile
-        })
-    } catch (error) {
+    }catch(error){
         return next(new ErrorHandler(error.message,500));
     }
 }

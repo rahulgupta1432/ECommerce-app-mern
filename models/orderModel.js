@@ -21,7 +21,9 @@ const orderSchema=new mongoose.Schema({
         ref:'User'
     },
     paymentMode:{
-        type:String
+        type:String,
+        enum: ['Paypal', 'COD'], // Allowed payment modes
+        required: true
     },
     status:{
         type:String,

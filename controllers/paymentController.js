@@ -34,20 +34,23 @@ export const paymentForOrder=async(req,res,next)=>{
         console.log("aaya")
         const {paymentMode}=req.query;
         const {cart,nonce,quantity,totalPayment}=req.body;
+        if(totalPayment==="$0.00"){
+            return next(new ErrorHandler("You Cart is Emptry, add new item",400));
+        }
+
         let total=0;
-        // cart.map(i=>total+=i.price);
+
         cart.map((i)=>{
             total+=i.price;
         })
-        console.log("query",req.query,"end");
-        console.log("body",req.body,"end");
+        if(paymentMode==="Paypal"){
         gateway.transaction.sale({
             amount: total,
             paymentMethodNonce: nonce[0],
             options: {
                 submitForSettlement: true,
             }
-        }, async (error, resp) => { // Callback function ko async bana rahe hain
+        }, async (error, resp) => {
             if (error) {
                 console.log(error);
                 return next(new ErrorHandler(error.message, 500));
@@ -72,9 +75,26 @@ export const paymentForOrder=async(req,res,next)=>{
                 });
             }
         });
-    
+    }else if (paymentMode === 'COD') {
+        // COD payment, no transaction processing
+        const order = await new Order({
+            product: cart,
+            buyer: req.user._id,
+            status: "Placed",
+            totalPayment: totalPayment,
+            quantity: quantity,
+            paymentMode: paymentMode
+        }).save();
+
+        sendResponse({
+            res,
+            message: "Order placed successfully with COD",
+            data: order
+        });
+    } else {
+        return next(new ErrorHandler("Invalid Payment mode. Only Paypal and COD are Accepted."))
+    }    
     } catch (error) {
-        console.log(error)
         return next(new ErrorHandler(error.message,500));
     }
 }

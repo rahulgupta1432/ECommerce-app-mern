@@ -1,6 +1,7 @@
 import ErrorHandler from "../utils/ErrorHandler.js";
 import sendResponse from "../utils/sendResponse.js";
 import Orders from "../models/orderModel.js"
+import User from "../models/userModel.js";
 
 export const getAllOrders=async(req,res,next)=>{
     const page = parseInt(req.query.page) || 1;
@@ -117,4 +118,51 @@ export const updateOrderStatus=async(req,res,next)=>{
 
 
 
+export const getAllUsers=async(req,res,next)=>{
+    try{
+        const page = parseInt(req.query.page) || 1;
+        let limit;
+        const skip=(page-1)*limit;
+        const {adminId}=req.query;
+        if(!adminId){
+            return next(new ErrorHandler("Please Provide Admin Id",400));
+        }
+        const checkAdmin=await User.findById(adminId);
+        if(!checkAdmin){
+            return next(new ErrorHandler("Admin Not Found",404));
+        }
+        const getUsers=await User.find().select("-password")
+        .limit(limit?limit:1000)
+        .skip(skip)
+        .sort({ createdAt: -1 })
+        .exec();
+        if(!getUsers||getUsers.length===0){
+            sendResponse({
+                res,
+                message:"No Users Found",
+                data:[]
+            })
+        }
+        const totalUsers=await Orders.countDocuments({isDeleted:false});
 
+        const pagination = {
+            limit,
+            page,
+            pages: Math.ceil(totalUsers / limit),
+            nextPage: page < Math.ceil(totalUsers / limit) ? page + 1 : null,
+            prevPage: page > 1 ? page - 1 : null,
+            hasPrevPage: page > 1,
+            hasNextPage: page < Math.ceil(totalUsers / limit)
+        };
+
+        getUsers.push(pagination)
+        sendResponse({
+            res,
+            message:"All Users Fetched Successfully",
+            data:getUsers
+        })
+
+    }catch(error){
+        return next(new ErrorHandler(error.message,500));
+    }
+}

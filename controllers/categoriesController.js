@@ -151,7 +151,7 @@ export const getCategories=async(req,res,next)=>{
 
 export const getAllCategories = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 25;
     const skip = (page - 1) * limit;
     let pipeline = [];
 
@@ -182,7 +182,7 @@ export const getAllCategories = async (req, res, next) => {
             { $skip: skip },
             { $limit: limit }
         ]);
-
+        
         if (!getCategories || getCategories.length === 0) {
             return sendResponse({
                 res,

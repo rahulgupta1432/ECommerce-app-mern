@@ -16,6 +16,9 @@ const orderSchema=new mongoose.Schema({
     },
     payment:{
     },
+    orderId:{
+        type:String,
+    },
     buyer:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'User'

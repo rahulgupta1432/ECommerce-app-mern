@@ -2,6 +2,8 @@ import braintree from "braintree";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import sendResponse from "../utils/sendResponse.js";
 import Order from "../models/orderModel.js";
+import crypto from "crypto";
+import axios from "axios";
 var gateway = new braintree.BraintreeGateway({
     environment: braintree.Environment.Sandbox,
     merchantId: process.env.BRAINTREE_MERCHANTID_PAYMENT,
@@ -31,7 +33,6 @@ export const getPaymentGatewayToken=async(req,res,next)=>{
 
 export const paymentForOrder=async(req,res,next)=>{
     try {
-        console.log("aaya")
         const {paymentMode}=req.query;
         const {cart,nonce,quantity,totalPayment}=req.body;
         if(totalPayment==="$0.00"){
@@ -91,10 +92,61 @@ export const paymentForOrder=async(req,res,next)=>{
             message: "Order placed successfully with COD",
             data: order
         });
-    } else {
+    } else if(paymentMode==='CRYPTO'){
+        const cryptoPay=await createInvoiceForCrypto(totalPayment);
+        const order = await new Order({
+            product: cart,
+            buyer: req.user._id,
+            status: "Placed",
+            totalPayment: totalPayment,
+            quantity: quantity,
+            paymentMode: paymentMode,
+            // orderId:cryptoPay.result.order_id
+            orderId:order_id||Math.random(
+                crypto.randomBytes(12).toString("base64")
+            )
+        }).save();
+
+        sendResponse({
+            res,
+            message: "Order placed successfully with Crypto",
+            data: order
+        });
+    }
+    else {
         return next(new ErrorHandler("Invalid Payment mode. Only Paypal and COD are Accepted."))
     }    
     } catch (error) {
         return next(new ErrorHandler(error.message,500));
+    }
+}
+
+var order_id=crypto.randomBytes(12).toString("base64");
+const cryptomus=axios.create({baseURL:'https://api.cryptomus.com/v1'});
+export const createInvoiceForCrypto=async(amount)=>{
+    try {
+        const data={
+            amount:amount,
+            currency:"USD",
+            // order_id:crypto.randomBytes(12).toString("base64"),
+            order_id:order_id,
+            url_return:'https://e-commerce-app-reactjs-ui.vercel.app/',
+            url_success:'https://e-commerce-app-reactjs-ui.vercel.app/dashboard/user/orders',
+            lifetime:300
+        };
+        const sign=crypto.createHash('md5').update(Buffer.from(JSON.stringify(data)).toString("base64")
+        +process.env.PAYMENT_CRYPTO_API_KEY).digest("hex");
+        const headers={
+            merchant:process.env.MERCHANT_CRYPTO_ID,
+            sign
+        };
+        const resp=await cryptomus.post('/payment',data,{
+            headers
+        })
+        return resp.data;
+
+    } catch (error) {
+        console.log(error);
+        return error;
     }
 }

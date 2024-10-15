@@ -153,9 +153,9 @@ export const getAllProducts=async(req,res,next)=>{
     try{
         let getProducts=[]
         if (type === 'Admin') {
-            limit = parseInt(req.query.limit) || 10; // Default limit for Admin
+            limit = parseInt(req.query.limit) || 1000; // Default limit for Admin 10
         } else {
-            limit = 50; // Default limit for non-Admin or missing type
+            limit = 5000; // Default limit for non-Admin or missing type 50
         }
 
         getProducts = await Product.find({ isDeleted: false })

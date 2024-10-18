@@ -29,6 +29,9 @@ const productSchema = new mongoose.Schema({
       type: String,
     },
   ],
+  colors:{
+    type:[String]
+  },
   quantity:{
     type:Number,
     required:true

@@ -1,6 +1,6 @@
 import express from "express";
 import Auth, { Admin } from "../middleware/authMiddleware.js";
-import { categoryBasedProduct, createProduct, deleteProductById, getAllProducts, getProduct, getSingleProductDetails, productFilters, searchAllProducts, toggleWishlist, updateProduct } from "../controllers/productController.js";
+import { categoryBasedProduct, createProduct, deleteProductById, getAllProducts, getProduct, getSingleProductDetails, productFilters, searchAllProducts, toggleWishlist, updateProduct, updateProductColors } from "../controllers/productController.js";
 import { upload } from "../utils/uploadFile.js";
 import searchQueryOnSingleField from "../middleware/utilify.js"
 
@@ -21,6 +21,8 @@ router.get('/search-product',searchAllProducts);
 
 router.get('/get-details',getSingleProductDetails);
 
-router.get('/category-based',categoryBasedProduct);
+router.post('/category-based',categoryBasedProduct);
+
+// router.get('/get-color',updateProductColors);
 
 export default router;

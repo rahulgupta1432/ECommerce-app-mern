@@ -81,17 +81,11 @@ export const updateProduct=async(req,res,next)=>{
 
     
         if (Array.isArray(indices)) {
-            console.log("Indices to Update:", indices);
             indices.forEach((index, i) => {
-                console.log(`Checking Index: ${index}`);
-                console.log(`Is Index Valid?`, index >= 0 && index < updatedImages.length);
-                console.log(`Is New Image Path Valid?`, productImagePaths[i]);
 
                 if (index >= 0 && index < updatedImages.length && productImagePaths[i]) {
                     updatedImages[index] = productImagePaths[i]; // Replace the image
-                    console.log(`Updated Index ${index}: ${updatedImages[index]}`);
                 } else {
-                    console.log(`Skipping Index: ${index} (Out of range or missing new image)`);
                 }
             });
         }
@@ -507,7 +501,6 @@ export const getSingleProductDetails=async(req,res,next)=>{
             data:data
         })
     } catch (error) {
-        console.log(error)
         return next(new ErrorHandler(error.message,500));
     }
 }
@@ -518,24 +511,43 @@ export const categoryBasedProduct = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit); 
     const skip = (page - 1) * (limit || 1000);
-
     try {
         const { categoryId } = req.query;
+        const {checked,colors}=req.body;
         if (!categoryId) {
             return next(new ErrorHandler("Please Provide Category Id", 400));
         }
-
-        // Count total products that are not deleted
-        const totalProducts = await Product.countDocuments({
-            category: categoryId,
+        let args={
+            category:categoryId,
             isDeleted: false
-        });
-
+        };
+        if(checked&&Array.isArray(checked)&&checked.length>0){
+            if (!checked.includes("All Price")) {
+            const priceRange=checked[0].split(' - ');
+        const minPrice=parseFloat(priceRange[0].replace('$','').trim());
+        const maxPrice = parseFloat(priceRange[1].replace('$', '').trim());
+            args.price={
+                $gte:minPrice,
+                $lte:maxPrice
+            }
+        }
+    }
+        if(colors&&Array.isArray(colors)&&colors.length>0){
+            if (!colors.includes("all colors")) {
+            args.colors={
+                    $in:colors
+                }
+            }
+        }
+        
+        const totalProducts = await Product.countDocuments(args);
         // Set limit to totalProducts if limit is not provided
         const productLimit = limit ? limit : totalProducts;
 
         // Fetch products with pagination
-        const products = await Product.find({ category: categoryId, isDeleted: false })
+        const products = await Product.find({
+            ...args
+        })
             .limit(productLimit)
             .skip(skip)
             .sort({ createdAt: -1 })
@@ -573,6 +585,48 @@ export const categoryBasedProduct = async (req, res, next) => {
             res,
             message: "All Products Fetched successfully",
             data: data
+        });
+
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+};
+
+
+
+const colorNames = ['red', 'blue', 'green', 'yellow', 'black', 'white']; // Array of color names
+
+export const updateProductColors = async (req, res, next) => {
+    try {
+        // Fetch all products
+        const products = await Product.find();
+
+        // Loop through each product
+        for (const product of products) {
+            // Find matching colors
+            const matchedColors = colorNames.filter(color => 
+                product.name.toLowerCase().includes(color)
+            );
+
+            // Update the product if colors are found
+            if (matchedColors.length > 0) {
+                // Push matched colors into the colors array, avoiding duplicates
+                matchedColors.forEach(color => {
+                    if (!product.colors.includes(color)) {
+                        product.colors.push(color); // Add the color to the colors array
+                    }
+                });
+
+                await product.save();
+                // console.log(`Updated product ${product._id} with colors: ${matchedColors}`);
+            }
+        }
+
+
+        // Send response
+        sendResponse({
+            res,
+            message: "Products updated with colors successfully",
         });
 
     } catch (error) {
